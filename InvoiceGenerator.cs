@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CabInvoiceGenerator
 {
-    internal class InvoiceGenerator
+    public class InvoiceGenerator
     {
         RideType rideType;
         private RideRepository rideRepository;
@@ -41,6 +41,7 @@ namespace CabInvoiceGenerator
                 throw new CabInvoiceException(CabInvoiceException.ExceptionType.INVALID_RIDE_TYPE, "Invalid Ride Type");
             }
         }
+        //Method for calculating Fare
         public double CalculateFare(double distance,int time)
         {
             double totalFare = 0;
@@ -65,6 +66,41 @@ namespace CabInvoiceGenerator
                 }
             }
             return Math.Max(totalFare, MINIMUM_FARE);
+        }
+
+        //Method for calculating total fare and generating summary of multiple rides
+        public InvoiceSummary CalculateFare(Ride[] rides)
+        {
+            double totalFare = 0;
+            try
+            {
+                //calculating total fare for all rides
+                foreach(Ride ride in rides)
+                {
+                    totalFare = this.CalculateFare(ride.distance,ride.time);
+                }
+            }
+            catch (CabInvoiceException)
+            {
+                if(rides == null)
+                {
+                    throw new CabInvoiceException(CabInvoiceException.ExceptionType.NULL_RIDES, "Rides are null!");
+                }
+            }
+            return new InvoiceSummary(rides.Length, totalFare);
+        }
+
+        //Method to get summary by userID
+        public InvoiceSummary GetInvoiceSummary(string userId)
+        {
+            try
+            {
+                return this.CalculateFare(rideRepository.GetRides(userId));
+            }
+            catch (CabInvoiceException)
+            {
+                throw new CabInvoiceException(CabInvoiceException.ExceptionType.INVALID_USER_ID, "Invalid UserId");
+            }
         }
     }
 }
